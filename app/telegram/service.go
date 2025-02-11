@@ -151,7 +151,7 @@ func NewEmptyService() *EmptyService {
 	return &EmptyService{}
 }
 
-func (e *EmptyService) ProcessChannel(ctx context.Context, log *zap.Logger, ch config.ConfChannel) error {
+func (s *EmptyService) ProcessChannel(ctx context.Context, log *zap.Logger, ch config.ConfChannel) error {
 	log.Debug("ProcessChannel", zap.Any("channel", ch))
 	return nil
 }
