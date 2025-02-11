@@ -1,0 +1,8 @@
+channels:
+  name1:
+    from: from1
+    to: to1
+  name2:
+    from: from2
+    to: to2
+update: 2m
