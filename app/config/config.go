@@ -7,21 +7,23 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Conf Channel Filter Types - subkeys of yaml-element "filters"
+const (
+	ccFilterTypeBolt      = "bolt"
+	ccFilterTypeImportant = "important"
+)
+
 // Conf for channels config yml
 type Conf struct {
-	Channels       map[string]ConfChannel `yaml:"channels"`
-	UpdateInterval time.Duration          `yaml:"update"`
+	Channels                        map[string]ConfChannel `yaml:"channels"`
+	UpdateInterval                  time.Duration          `yaml:"update"`
+	availableConfChannelFilterTypes []string
 }
 
 type ConfChannel struct {
-	Filters ConfChannelFilters `yaml:"filters,omitempty"`
-	From    string             `yaml:"from"`
-	To      string             `yaml:"to,omitempty"`
-}
-
-type ConfChannelFilters struct {
-	Bolt      *ConfChannelFilter `yaml:"bolt,omitempty"`
-	Important *ConfChannelFilter `yaml:"important,omitempty"`
+	Filters map[string]*ConfChannelFilter `yaml:"filters,omitempty"`
+	From    string                        `yaml:"from"`
+	To      string                        `yaml:"to,omitempty"`
 }
 
 type ConfChannelFilter struct {
