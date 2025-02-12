@@ -1,12 +1,14 @@
 package filter
 
-import "strings"
+import (
+	"strings"
+)
 
 type PrefixFilter struct {
 	prefix string
 }
 
-func NewPrefixFilter(prefix string) *PrefixFilter {
+func newPrefixFilter(prefix string) *PrefixFilter {
 	return &PrefixFilter{prefix: prefix}
 }
 

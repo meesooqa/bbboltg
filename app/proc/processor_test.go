@@ -1,15 +1,17 @@
-package telegram
+package proc
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/gotd/td/tg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/meesooqa/bbboltg/app/config"
+	"github.com/meesooqa/bbboltg/app/telegram"
 )
 
 type mockService struct {
@@ -20,6 +22,14 @@ type mockService struct {
 func (s *mockService) ProcessChannel(ctx context.Context, log *zap.Logger, ch config.ConfChannel) error {
 	s.calls++
 	return s.err
+}
+
+func (s *mockService) GetChannel(ctx context.Context, name string) (*tg.Channel, error) {
+	return nil, nil
+}
+
+func (s *mockService) GetMessages(ctx context.Context, channel *tg.Channel) ([]telegram.TelegramMessage, error) {
+	return nil, nil
 }
 
 func TestProcessor_Do(t *testing.T) {

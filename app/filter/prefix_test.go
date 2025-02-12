@@ -8,7 +8,7 @@ import (
 
 func TestFilterBolt(t *testing.T) {
 	// High Voltage Sign
-	f := NewPrefixFilter("⚡️")
+	f := newPrefixFilter("⚡️")
 
 	tests := []struct {
 		name  string
@@ -33,7 +33,7 @@ func TestFilterBolt(t *testing.T) {
 
 func TestFilterImportant(t *testing.T) {
 	// Heavy Exclamation Mark Symbol
-	f := NewPrefixFilter("❗️")
+	f := newPrefixFilter("❗️")
 
 	tests := []struct {
 		name  string

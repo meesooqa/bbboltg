@@ -3,7 +3,7 @@ package filter
 import (
 	"testing"
 
-	"github.com/meesooqa/bbboltg/app/reader"
+	"github.com/meesooqa/bbboltg/app/telegram"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,27 +16,18 @@ func (m MockMessage) String() string {
 }
 
 // Функция для создания мок-сообщений
-func createMockMessages(contents ...string) []reader.TelegramMessage {
-	messages := make([]reader.TelegramMessage, len(contents))
+func createMockMessages(contents ...string) []telegram.TelegramMessage {
+	messages := make([]telegram.TelegramMessage, len(contents))
 	for i, content := range contents {
 		messages[i] = MockMessage(content)
 	}
 	return messages
 }
 
-// Функция для чтения всех значений из канала
-func readAllFromChannel(ch <-chan reader.TelegramMessage) []reader.TelegramMessage {
-	var result []reader.TelegramMessage
-	for msg := range ch {
-		result = append(result, msg)
-	}
-	return result
-}
-
 func TestFilterStringables(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     []reader.TelegramMessage
+		input     []telegram.TelegramMessage
 		condition func(string) bool
 		expected  []string
 	}{
@@ -68,8 +59,7 @@ func TestFilterStringables(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := FilterTelegramMessages(tt.input, tt.condition)
-			result := readAllFromChannel(ch)
+			result := FilterTelegramMessages(tt.input, tt.condition)
 
 			// convert to []string
 			var resultStrings []string
