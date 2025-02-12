@@ -12,11 +12,14 @@ func TestLoad(t *testing.T) {
 	r, err := Load("testdata/config.yml")
 	require.NoError(t, err)
 
-	assert.Equal(t, time.Duration(2*time.Minute), r.UpdateInterval)
+	assert.Equal(t, 2*time.Minute, r.UpdateInterval)
 
 	assert.Equal(t, 2, len(r.Channels), "2 channels")
 	assert.Equal(t, "from1", r.Channels["name1"].From)
 	assert.Equal(t, "to1", r.Channels["name1"].To)
+	assert.Equal(t, "prefixBolt", r.Channels["name1"].Filters.Bolt.Prefix)
+	assert.Equal(t, "prefixImportant", r.Channels["name1"].Filters.Important.Prefix)
+
 	assert.Equal(t, "from2", r.Channels["name2"].From)
 	assert.Equal(t, "to2", r.Channels["name2"].To)
 }

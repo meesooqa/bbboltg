@@ -2,6 +2,11 @@ channels:
   name1:
     from: from1
     to: to1
+    filters:
+      bolt:
+        prefix: prefixBolt
+      important:
+        prefix: prefixImportant
   name2:
     from: from2
     to: to2

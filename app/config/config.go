@@ -7,15 +7,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type ConfChannel struct {
-	From string `yaml:"from"`
-	To   string `yaml:"to"`
-}
-
 // Conf for channels config yml
 type Conf struct {
 	Channels       map[string]ConfChannel `yaml:"channels"`
 	UpdateInterval time.Duration          `yaml:"update"`
+}
+
+type ConfChannel struct {
+	From    string             `yaml:"from"`
+	To      string             `yaml:"to"`
+	Filters ConfChannelFilters `yaml:"filters,omitempty"`
+}
+
+type ConfChannelFilters struct {
+	Bolt      *ConfChannelFilter `yaml:"bolt,omitempty"`
+	Important *ConfChannelFilter `yaml:"important,omitempty"`
+}
+
+type ConfChannelFilter struct {
+	Prefix string `yaml:"prefix,omitempty"`
 }
 
 // Load config from file

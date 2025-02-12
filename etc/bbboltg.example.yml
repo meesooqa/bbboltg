@@ -2,4 +2,9 @@ channels:
   channel_from:
     from: channel_from
     to: channel_to
+    filters:
+      bolt:
+        prefix: ⚡️
+      important:
+        prefix: ❗️
 update: 5m
