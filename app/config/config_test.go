@@ -19,7 +19,7 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "to1", r.Channels["name1"].To)
 
 	assert.Equal(t, "⚡️", r.Channels["name1"].Filters.Bolt.Prefix)
-	assert.Equal(t, "❗️", r.Channels["name1"].Filters.Important.Prefix)
+	assert.Empty(t, r.Channels["name1"].Filters.Important)
 
 	assert.Equal(t, "from2", r.Channels["name2"].From)
 	assert.Equal(t, "to2", r.Channels["name2"].To)

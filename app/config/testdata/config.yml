@@ -5,8 +5,6 @@ channels:
     filters:
       bolt:
         prefix: "⚡️"
-      important:
-        prefix: "❗️"
   name2:
     from: from2
     to: to2
