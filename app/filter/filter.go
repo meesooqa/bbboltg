@@ -1,12 +1,9 @@
 package filter
 
-// github.com/gotd/td/tg.MessageClass
-type Stringable interface {
-	String() string
-}
+import "github.com/meesooqa/bbboltg/app/reader"
 
-func FilterStringables(items []Stringable, condition func(string) bool) <-chan Stringable {
-	ch := make(chan Stringable)
+func FilterStringables(items []reader.Stringable, condition func(string) bool) <-chan reader.Stringable {
+	ch := make(chan reader.Stringable)
 	go func() {
 		defer close(ch)
 		for _, item := range items {

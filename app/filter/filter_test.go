@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"github.com/meesooqa/bbboltg/app/reader"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,8 +15,8 @@ func (m MockMessage) String() string {
 }
 
 // Функция для создания мок-сообщений
-func createMockMessages(contents ...string) []Stringable {
-	messages := make([]Stringable, len(contents))
+func createMockMessages(contents ...string) []reader.Stringable {
+	messages := make([]reader.Stringable, len(contents))
 	for i, content := range contents {
 		messages[i] = MockMessage(content)
 	}
@@ -23,8 +24,8 @@ func createMockMessages(contents ...string) []Stringable {
 }
 
 // Функция для чтения всех значений из канала
-func readAllFromChannel(ch <-chan Stringable) []Stringable {
-	var result []Stringable
+func readAllFromChannel(ch <-chan reader.Stringable) []reader.Stringable {
+	var result []reader.Stringable
 	for msg := range ch {
 		result = append(result, msg)
 	}
@@ -34,7 +35,7 @@ func readAllFromChannel(ch <-chan Stringable) []Stringable {
 func TestFilterStringables(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     []Stringable
+		input     []reader.Stringable
 		condition func(string) bool
 		expected  []string
 	}{
