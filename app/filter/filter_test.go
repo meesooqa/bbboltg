@@ -1,9 +1,10 @@
 package filter
 
 import (
+	"testing"
+
 	"github.com/meesooqa/bbboltg/app/reader"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 // Мок-структура для имитации интерфейса Message
@@ -15,8 +16,8 @@ func (m MockMessage) String() string {
 }
 
 // Функция для создания мок-сообщений
-func createMockMessages(contents ...string) []reader.Stringable {
-	messages := make([]reader.Stringable, len(contents))
+func createMockMessages(contents ...string) []reader.TelegramMessage {
+	messages := make([]reader.TelegramMessage, len(contents))
 	for i, content := range contents {
 		messages[i] = MockMessage(content)
 	}
@@ -24,8 +25,8 @@ func createMockMessages(contents ...string) []reader.Stringable {
 }
 
 // Функция для чтения всех значений из канала
-func readAllFromChannel(ch <-chan reader.Stringable) []reader.Stringable {
-	var result []reader.Stringable
+func readAllFromChannel(ch <-chan reader.TelegramMessage) []reader.TelegramMessage {
+	var result []reader.TelegramMessage
 	for msg := range ch {
 		result = append(result, msg)
 	}
@@ -35,7 +36,7 @@ func readAllFromChannel(ch <-chan reader.Stringable) []reader.Stringable {
 func TestFilterStringables(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     []reader.Stringable
+		input     []reader.TelegramMessage
 		condition func(string) bool
 		expected  []string
 	}{
@@ -67,7 +68,7 @@ func TestFilterStringables(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := FilterStringables(tt.input, tt.condition)
+			ch := FilterTelegramMessages(tt.input, tt.condition)
 			result := readAllFromChannel(ch)
 
 			// convert to []string

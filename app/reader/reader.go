@@ -1,6 +1,6 @@
 package reader
 
 // github.com/gotd/td/tg.MessageClass
-type Stringable interface {
+type TelegramMessage interface {
 	String() string
 }
