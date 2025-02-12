@@ -2,6 +2,7 @@ channels:
   name1:
     from: from1
     to: to1
+    to_bolt: to_bolt1
     filters:
       bolt:
         prefix: "⚡️"

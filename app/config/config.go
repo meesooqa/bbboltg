@@ -14,9 +14,11 @@ type Conf struct {
 }
 
 type ConfChannel struct {
-	From    string             `yaml:"from"`
-	To      string             `yaml:"to"`
-	Filters ConfChannelFilters `yaml:"filters,omitempty"`
+	Filters     ConfChannelFilters `yaml:"filters,omitempty"`
+	From        string             `yaml:"from"`
+	To          string             `yaml:"to,omitempty"`
+	ToBolt      string             `yaml:"to_bolt,omitempty"`
+	ToImportant string             `yaml:"to_important,omitempty"`
 }
 
 type ConfChannelFilters struct {
