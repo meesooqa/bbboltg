@@ -4,7 +4,7 @@ channels:
     to: channel_to
     filters:
       bolt:
-        prefix: ⚡️
+        prefix: "⚡️"
       important:
-        prefix: ❗️
+        prefix: "❗️"
 update: 5m
