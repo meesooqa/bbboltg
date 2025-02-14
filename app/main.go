@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/meesooqa/bbboltg/app/config"
-	"github.com/meesooqa/bbboltg/app/telegram"
+	"github.com/meesooqa/bbboltg/app/proc"
 )
 
 type options struct {
@@ -37,8 +37,10 @@ func main() {
 		logger.Error("can't load config", zap.Any("config", opts.Conf), zap.Error(err))
 	}
 
-	p := telegram.NewProcessor(conf)
-	if err := p.Do(context.Background(), logger); err != nil {
+	p := proc.NewProcessor(conf, logger)
+	if err := p.Do(context.Background()); err != nil {
 		logger.Error("processor failed", zap.Error(err))
 	}
+
+	logger.Debug("end of bbboltg")
 }

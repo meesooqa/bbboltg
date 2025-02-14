@@ -16,8 +16,8 @@ type TelegramReader struct {
 	TelegramService telegram.Service
 }
 
-func NewTelegramReader(telegramService telegram.Service) TelegramReader {
-	return TelegramReader{
+func NewTelegramReader(telegramService telegram.Service) *TelegramReader {
+	return &TelegramReader{
 		TelegramService: telegramService,
 	}
 }

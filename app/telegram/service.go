@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"sort"
 	"time"
 
 	td "github.com/gotd/td/telegram"
@@ -15,73 +14,87 @@ import (
 	"github.com/meesooqa/bbboltg/app/config"
 )
 
+// github.com/gotd/td/tg.MessageClass
+type TelegramMessage interface {
+	// String implements fmt.Stringer
+	String() string
+}
+
 type Service interface {
-	ProcessChannel(ctx context.Context, log *zap.Logger, ch config.ConfChannel) error
+	//Init(ctx context.Context) error
+	ProcessChannel(ctx context.Context, ch config.ConfChannel) error
+	GetChannel(ctx context.Context, name string) (*tg.Channel, error)
+	GetMessages(ctx context.Context, channel *tg.Channel) ([]TelegramMessage, error)
+	ForwardMessage(ctx context.Context, msg TelegramMessage, channelFrom *tg.Channel, channelTo *tg.Channel) error
 }
 
 type TgService struct {
 	conf *config.Conf
+	log  *zap.Logger
+	api  *tg.Client
 }
 
-func NewTgService(conf *config.Conf) *TgService {
-	return &TgService{conf: conf}
+func NewTgService(conf *config.Conf, log *zap.Logger) *TgService {
+	return &TgService{
+		conf: conf,
+		log:  log,
+	}
 }
 
-func (s *TgService) ProcessChannel(ctx context.Context, log *zap.Logger, ch config.ConfChannel) error {
+func (s *TgService) ProcessChannel(ctx context.Context, ch config.ConfChannel) error {
+	s.log.Info("TgService.ProcessChannel")
+
 	flow := auth.NewFlow(AuthFlow{}, auth.SendCodeOptions{})
-
 	client, err := td.ClientFromEnvironment(td.Options{
-		Logger: log,
+		Logger: s.log,
 	})
 	if err != nil {
 		return err
 	}
-
 	return client.Run(ctx, func(ctx context.Context) error {
 		if err := client.Auth().IfNecessary(ctx, flow); err != nil {
 			return err
 		}
+		s.api = tg.NewClient(client)
 
-		api := tg.NewClient(client)
-		// collect data
-		channel, err := s.getChannel(ch.From, ctx, api)
+		channelFrom, err := s.GetChannel(ctx, ch.From)
 		if err != nil {
+			s.log.Error("channelFrom getting", zap.Error(err))
 			return err
 		}
-		messages, err := s.getMessages(channel, ctx, api)
+		messages, err := s.GetMessages(ctx, channelFrom)
 		if err != nil {
+			s.log.Error("message reading", zap.Error(err))
 			return err
 		}
-		toChannel, err := s.getChannel(ch.To, ctx, api)
-		if err != nil {
-			return err
+		if len(messages) == 0 {
+			s.log.Debug("no messages")
+			return nil
 		}
-		randomIDs := s.generateRandomIDs(len(messages))
-		// send
-		for i, msg := range messages {
-			m, ok := msg.(*tg.Message)
-			if !ok {
-				continue
-			}
-
-			_, err := api.MessagesForwardMessages(ctx, &tg.MessagesForwardMessagesRequest{
-				ID: []int{m.ID},
-				FromPeer: &tg.InputPeerChannel{
-					ChannelID:  channel.ID,
-					AccessHash: channel.AccessHash,
-				},
-				ToPeer: &tg.InputPeerChannel{
-					ChannelID:  toChannel.ID,
-					AccessHash: toChannel.AccessHash,
-				},
-				RandomID:   []int64{randomIDs[i]},
-				DropAuthor: false,
-			})
-
+		/*
+			messages, err = s.filterMessages(messages, ch)
 			if err != nil {
+				s.log.Error("message filtering", zap.Error(err))
 				return err
-			} else {
-				fmt.Printf("✅ %d\n", m.ID)
+			}
+			if len(messages) == 0 {
+				s.log.Debug("no filtered messages")
+				return nil
+			}
+		*/
+		/*
+			messages = s.sortMessages(messages)
+		*/
+		channelTo, err := s.GetChannel(ctx, ch.To)
+		if err != nil {
+			s.log.Error("channelTo getting", zap.Error(err))
+			return err
+		}
+		for _, message := range messages {
+			err := s.ForwardMessage(ctx, message, channelFrom, channelTo)
+			if err != nil {
+				s.log.Error("message writing", zap.Error(err))
+				return err
 			}
 		}
 
@@ -89,18 +102,60 @@ func (s *TgService) ProcessChannel(ctx context.Context, log *zap.Logger, ch conf
 	})
 }
 
-func (s *TgService) generateRandomIDs(n int) []int64 {
-	// TODO deprecated rand.Seed(time.Now().UnixNano())
-	rand.Seed(time.Now().UnixNano())
-	randomIDs := make([]int64, n)
-	for i := range randomIDs {
-		randomIDs[i] = rand.Int63()
+func (s *TgService) Init(ctx context.Context) error {
+	flow := auth.NewFlow(AuthFlow{}, auth.SendCodeOptions{})
+	client, err := td.ClientFromEnvironment(td.Options{
+		Logger: s.log,
+	})
+	if err != nil {
+		return err
 	}
-	return randomIDs
+	return client.Run(ctx, func(ctx context.Context) error {
+		if err := client.Auth().IfNecessary(ctx, flow); err != nil {
+			return err
+		}
+		s.api = tg.NewClient(client)
+		return nil
+	})
 }
 
-func (s *TgService) getChannel(name string, ctx context.Context, api *tg.Client) (*tg.Channel, error) {
-	resolved, err := api.ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
+func (s *TgService) getRandomID() int64 {
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return rnd.Int63()
+}
+
+func (s *TgService) ForwardMessage(
+	ctx context.Context,
+	msg TelegramMessage,
+	channelFrom *tg.Channel,
+	channelTo *tg.Channel,
+) error {
+	m, ok := msg.(*tg.Message)
+	if !ok {
+		return nil
+	}
+	_, err := s.api.MessagesForwardMessages(ctx, &tg.MessagesForwardMessagesRequest{
+		ID: []int{m.ID},
+		FromPeer: &tg.InputPeerChannel{
+			ChannelID:  channelFrom.ID,
+			AccessHash: channelFrom.AccessHash,
+		},
+		ToPeer: &tg.InputPeerChannel{
+			ChannelID:  channelTo.ID,
+			AccessHash: channelTo.AccessHash,
+		},
+		RandomID:   []int64{s.getRandomID()},
+		DropAuthor: false,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *TgService) GetChannel(ctx context.Context, name string) (*tg.Channel, error) {
+	resolved, err := s.api.ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
 		Username: name,
 	})
 	if err != nil {
@@ -113,36 +168,32 @@ func (s *TgService) getChannel(name string, ctx context.Context, api *tg.Client)
 	return channel, nil
 }
 
-func (s *TgService) getMessages(channel *tg.Channel, ctx context.Context, api *tg.Client) ([]tg.MessageClass, error) {
+func (s *TgService) GetMessages(ctx context.Context, channel *tg.Channel) ([]TelegramMessage, error) {
+	limit := 2
 	//OffsetID: lastMessageID,
-	messages, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
+
+	messages, err := s.api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer: &tg.InputPeerChannel{
 			ChannelID:  channel.ID,
 			AccessHash: channel.AccessHash,
 		},
-		Limit: 2, // Количество сообщений
+		Limit: limit,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("ошибка получения сообщений: %w", err)
 	}
 
 	channelMessages := messages.(*tg.MessagesChannelMessages)
-	// Если новых сообщений нет — выходим
 	if len(channelMessages.Messages) == 0 {
-		fmt.Print("новых сообщений нет")
+		s.log.Debug("новых сообщений нет")
 		return nil, nil
 	}
 
-	// Сортируем сообщения по ID (по возрастанию)
-	sort.Slice(channelMessages.Messages, func(i, j int) bool {
-		msgI, okI := channelMessages.Messages[i].(*tg.Message)
-		msgJ, okJ := channelMessages.Messages[j].(*tg.Message)
-		if !okI || !okJ {
-			return false
-		}
-		return msgI.ID < msgJ.ID
-	})
-	return channelMessages.Messages, nil
+	result := make([]TelegramMessage, len(channelMessages.Messages))
+	for i, msg := range channelMessages.Messages {
+		result[i] = msg
+	}
+	return result, nil
 }
 
 type EmptyService struct{}
@@ -151,7 +202,22 @@ func NewEmptyService() *EmptyService {
 	return &EmptyService{}
 }
 
-func (s *EmptyService) ProcessChannel(ctx context.Context, log *zap.Logger, ch config.ConfChannel) error {
-	log.Debug("ProcessChannel", zap.Any("channel", ch))
+func (s *EmptyService) Init(ctx context.Context) error {
+	return nil
+}
+
+func (s *EmptyService) ProcessChannel(ctx context.Context, ch config.ConfChannel) error {
+	return nil
+}
+
+func (s *EmptyService) GetChannel(ctx context.Context, name string) (*tg.Channel, error) {
+	return nil, nil
+}
+
+func (s *EmptyService) GetMessages(ctx context.Context, channel *tg.Channel) ([]TelegramMessage, error) {
+	return nil, nil
+}
+
+func (s *EmptyService) ForwardMessage(ctx context.Context, msg TelegramMessage, channelFrom *tg.Channel, channelTo *tg.Channel) error {
 	return nil
 }
